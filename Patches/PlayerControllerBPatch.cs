@@ -11,9 +11,6 @@ namespace CompanyBuildingEnhancements.Patches
         [HarmonyPostfix]
         [HarmonyPatch("ConnectClientToPlayerObject")]
         public static void InitializeLocalPlayer() {
-            CompanyBuildingEnhancementsBase.Logger.LogInfo("Called InitializeLocalPlayer");
-            StartMatchLeverPatch.logged = false;
-
             if (Config.IsHost) {
                 try {
                     Config.MessageManager.RegisterNamedMessageHandler("CompanyBuildingEnhancements_OnRequestConfigSync", Config.OnRequestSync);

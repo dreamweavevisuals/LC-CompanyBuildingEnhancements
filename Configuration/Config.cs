@@ -1,4 +1,5 @@
 ﻿using BepInEx.Configuration;
+using CompanyBuildingEnhancements.Patches;
 using HarmonyLib;
 using System;
 using Unity.Collections;
@@ -45,8 +46,6 @@ namespace CompanyBuildingEnhancements.Configuration {
         public static void RequestSync()
         {
             if (!IsClient) return;
-
-            CompanyBuildingEnhancementsBase.Logger.LogInfo("Called RequestSync");
 
             using FastBufferWriter stream = new(IntSize, Allocator.Temp);
             MessageManager.SendNamedMessage("CompanyBuildingEnhancements_OnRequestConfigSync", 0uL, stream);
@@ -105,6 +104,7 @@ namespace CompanyBuildingEnhancements.Configuration {
         [HarmonyPatch(typeof(GameNetworkManager), "StartDisconnect")]
         public static void PlayerLeave()
         {
+            StartMatchLeverPatch.logged = false;
             RevertSync();
         }
     }
