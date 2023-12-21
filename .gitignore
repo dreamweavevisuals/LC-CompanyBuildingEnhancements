@@ -2,3 +2,9 @@ obj/
 bin/
 libs/
 libraries/
+
+Properties/
+
+.vscode/
+.vs/
+xcopy/
