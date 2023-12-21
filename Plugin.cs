@@ -18,7 +18,7 @@ namespace CompanyBuildingEnhancements
         public static new Config Config { get; internal set; }
         internal static new ManualLogSource Logger { get; private set; }
 
-        private readonly Harmony harmony = new(modGUID);
+        private Harmony harmony;
 
         private static CompanyBuildingEnhancementsBase Instance;
 
@@ -30,6 +30,8 @@ namespace CompanyBuildingEnhancements
             Config = new(base.Config);
 
             try {
+                harmony = new(modGUID);
+
                 harmony.PatchAll(typeof(PlayerControllerBPatch));
                 harmony.PatchAll(typeof(StartMatchLeverPatch));
 

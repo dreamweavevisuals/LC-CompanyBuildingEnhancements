@@ -47,7 +47,7 @@ namespace CompanyBuildingEnhancements.Configuration {
         {
             if (!IsClient) return;
 
-            using FastBufferWriter stream = new(4, Allocator.Temp);
+            using FastBufferWriter stream = new(IntSize, Allocator.Temp);
             MessageManager.SendNamedMessage("CompanyBuildingEnhancements_OnRequestConfigSync", 0uL, stream);
         }
 
@@ -60,7 +60,7 @@ namespace CompanyBuildingEnhancements.Configuration {
             byte[] array = SerializeToBytes(Instance);
             int value = array.Length;
 
-            using FastBufferWriter stream = new(value + 4, Allocator.Temp);
+            using FastBufferWriter stream = new(value + IntSize, Allocator.Temp);
 
             try
             {
@@ -77,7 +77,7 @@ namespace CompanyBuildingEnhancements.Configuration {
 
         public static void OnReceiveSync(ulong _, FastBufferReader reader)
         {
-            if (!reader.TryBeginRead(4))
+            if (!reader.TryBeginRead(IntSize))
             {
                 CompanyBuildingEnhancementsBase.Logger.LogError("Config sync error: Could not begin reading buffer.");
                 return;

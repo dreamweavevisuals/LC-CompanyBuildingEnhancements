@@ -4,10 +4,11 @@ using HarmonyLib;
 
 namespace CompanyBuildingEnhancements.Patches
 {
-    [HarmonyPatch(typeof(PlayerControllerB), "Update")]
+    [HarmonyPatch(typeof(PlayerControllerB))]
     internal class PlayerControllerBPatch
     {
         [HarmonyPostfix]
+        [HarmonyPatch("Update")]
         static void InfiniteStaminaAtCompanyPatch(ref float ___sprintMeter)
         {
             if (!Config.Default.INFINITE_SPRINT_AT_COMPANY)
