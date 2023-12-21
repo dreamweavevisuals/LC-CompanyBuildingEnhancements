@@ -22,8 +22,6 @@ namespace CompanyBuildingEnhancements.Patches {
             if (!logged) {
                 CompanyBuildingEnhancementsBase.Logger.LogInfo(syncedInstantLanding);
                 CompanyBuildingEnhancementsBase.Logger.LogInfo(syncedAutoLanding);
-
-                logged = true;
             }
             #endregion
 
@@ -74,6 +72,8 @@ namespace CompanyBuildingEnhancements.Patches {
             shipHubAnimator.speed = 1f;
             if (!logged) CompanyBuildingEnhancementsBase.Logger.LogInfo("Instant Landing did not sync with host config");
             #endregion
+
+            logged = true;
         }
     }
 }
