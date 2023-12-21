@@ -13,7 +13,7 @@ namespace CompanyBuildingEnhancements.Patches {
 
         [HarmonyPrefix]
         [HarmonyPatch("Update")]
-        private static void AutoLandAtCompany(ref StartMatchLever __instance)
+        private static void AutoLandAtCompany(StartMatchLever __instance)
         {
             #region Synced Config Variables
             bool syncedInstantLanding = Config.Instance.INSTANT_LAND_AT_COMPANY;
@@ -38,7 +38,9 @@ namespace CompanyBuildingEnhancements.Patches {
                 pManager.ChangeLevel(3);
                 __instance.StartGame();
 
-                CompanyBuildingEnhancementsBase.Logger.LogInfo("Auto Landing successfully synced with host config");
+                if (!logged) {
+                    CompanyBuildingEnhancementsBase.Logger.LogInfo("Auto Landing successfully synced with host config");
+                }
 
             }
             #endregion
@@ -51,6 +53,9 @@ namespace CompanyBuildingEnhancements.Patches {
 
                 if (!shipHub || !shipHubAnimator)
                 {
+                    if (logged)
+                        return;
+
                     CompanyBuildingEnhancementsBase.Logger.LogError(
                         "Ship object or animator not found? Cannot instantly land at company building!"
                     );
@@ -61,13 +66,13 @@ namespace CompanyBuildingEnhancements.Patches {
 
             if (syncedInstantLanding && levelID == 3) {
                 shipHubAnimator.speed = 10f;
-                CompanyBuildingEnhancementsBase.Logger.LogInfo("Instant Landing successfully synced with host config");
+                if (!logged) CompanyBuildingEnhancementsBase.Logger.LogInfo("Instant Landing successfully synced with host config");
 
                 return;
             }
 
             shipHubAnimator.speed = 1f;
-            CompanyBuildingEnhancementsBase.Logger.LogInfo("Instant Landing did not sync with host config");
+            if (!logged) CompanyBuildingEnhancementsBase.Logger.LogInfo("Instant Landing did not sync with host config");
             #endregion
         }
     }
