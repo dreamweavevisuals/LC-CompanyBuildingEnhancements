@@ -65,15 +65,13 @@ namespace CompanyBuildingEnhancements.Patches {
             if (syncedInstantLanding && levelID == 3) {
                 shipHubAnimator.speed = 10f;
                 if (!logged) CompanyBuildingEnhancementsBase.Logger.LogInfo("Instant Landing successfully synced with host config");
-
-                return;
+            } else {
+                shipHubAnimator.speed = 1f;
+                if (!logged) CompanyBuildingEnhancementsBase.Logger.LogInfo("Instant Landing did not sync with host config");
             }
 
-            shipHubAnimator.speed = 1f;
-            if (!logged) CompanyBuildingEnhancementsBase.Logger.LogInfo("Instant Landing did not sync with host config");
-            #endregion
-
             logged = true;
+            #endregion
         }
     }
 }
