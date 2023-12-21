@@ -2,41 +2,47 @@
 using GameNetcodeStuff;
 using HarmonyLib;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Unity.Collections;
 using Unity.Netcode;
 
-namespace CompanyBuildingEnhancements
-{
+namespace CompanyBuildingEnhancements.Configuration {
     [Serializable]
     public class Config : SyncedInstance<Config>
     {
-        public bool enableInstantLandingAtCompanyConfig { get; private set; }
-        public bool enableAutoLandingOnDeadlineConfig { get; private set; }
-        public bool enableInfiniteSprintAtCompanyConfig { get; private set; }
+        public bool AUTO_LAND_ON_DEADLINE { get; private set; }
+        public bool INSTANT_LAND_AT_COMPANY { get; private set; }
+        public bool INFINITE_SPRINT_AT_COMPANY { get; private set; }
+
+        [NonSerialized]
+        readonly ConfigFile file;
 
         public Config(ConfigFile cfg)
         {
             InitInstance(this);
+            file = cfg;
 
-            enableInstantLandingAtCompanyConfig = cfg.Bind("Company Building Enhancements",
-                                                     "Instant Landing At Company Building",
-                                                     true,
-                                                     "If set to true, the ship will land instantly at the Company Building. You will be able to run to the shelf to sell your items as soon as the ship doors open. This setting will automatically sync with the host's config file to avoid any desync issues.").Value;
-            enableAutoLandingOnDeadlineConfig = cfg.Bind("Company Building Enhancements",
-                                                     "Automatic Landing At Company Building When Deadline Reaches 0 Days",
-                                                     false,
-                                                     "If set to true, the ship will automatically re-route & land at the Company Building when the deadline reaches 0 days. This setting will automatically sync with the host's config file to avoid any desync issues.").Value;
-            enableInfiniteSprintAtCompanyConfig = cfg.Bind("Company Building Enhancements",
-                                                     "Infinite Stamina/Sprint At Company Building",
-                                                     true,
-                                                     "If set to true, you will have infinite stamina/sprint at the Company Building.").Value;
+            INSTANT_LAND_AT_COMPANY = NewEntry("bInstantLand", true,
+                "If set to true, the ship will land instantly at the Company Building. " +
+                "You will be able to run to the shelf to sell your items as soon as the ship doors open.\n" +
+                "This setting will automatically sync with the host's config file to avoid any desync issues."
+            );
+
+            AUTO_LAND_ON_DEADLINE = NewEntry("bAutoLandOnDeadline", false,
+                "If set to true, the ship will automatically re-route & land at the Company Building when the deadline reaches 0 days.\n" +
+                "This setting will automatically sync with the host's config file to avoid any desync issues.");
+
+            INFINITE_SPRINT_AT_COMPANY = NewEntry("bInfiniteSprintAtCompanyBuilding",
+                true,
+                "If set to true, you will have infinite stamina/sprint at the Company Building."
+            );
         }
 
-        //Request/Receiver Methods
+        private T NewEntry<T>(string key, T defaultVal, string desc)
+        {
+            return file.Bind("Company Building Enhancements", key, defaultVal, desc).Value;
+        }
+
+        #region Request/Receiver Methods
         public static void RequestSync()
         {
             if (!IsClient) return;
@@ -54,7 +60,7 @@ namespace CompanyBuildingEnhancements
             byte[] array = SerializeToBytes(Instance);
             int value = array.Length;
 
-            using FastBufferWriter stream = new(array.Length + 4, Allocator.Temp);
+            using FastBufferWriter stream = new(value + 4, Allocator.Temp);
 
             try
             {
@@ -91,8 +97,9 @@ namespace CompanyBuildingEnhancements
 
             CompanyBuildingEnhancementsBase.Logger.LogInfo("Successfully synced config with host.");
         }
+        #endregion
 
-        //Join/Leave Patches
+        #region Join/Leave Patches
         [HarmonyPostfix]
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
         public static void InitializeLocalPlayer()
@@ -114,7 +121,8 @@ namespace CompanyBuildingEnhancements
         [HarmonyPatch(typeof(GameNetworkManager), "StartDisconnect")]
         public static void PlayerLeave()
         {
-            Config.RevertSync();
+            RevertSync();
         }
+        #endregion
     }
 }
