@@ -9,7 +9,7 @@ namespace CompanyBuildingEnhancements.Patches {
         internal static GameObject shipHub;
         internal static Animator shipHubAnimator;
 
-        static bool logged = false;
+        internal static bool logged = false;
 
         [HarmonyPrefix]
         [HarmonyPatch("Update")]

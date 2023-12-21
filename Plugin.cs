@@ -27,9 +27,7 @@ namespace CompanyBuildingEnhancements
 
             try {
                 harmony = new(modGUID);
-
-                harmony.PatchAll(typeof(PlayerControllerBPatch));
-                harmony.PatchAll(typeof(StartMatchLeverPatch));
+                harmony.PatchAll();
 
                 Logger.LogInfo($"{modName} loaded successfully");
             } catch(Exception e) {

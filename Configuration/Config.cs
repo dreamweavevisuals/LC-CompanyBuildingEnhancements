@@ -1,4 +1,5 @@
 ﻿using BepInEx.Configuration;
+using CompanyBuildingEnhancements.Patches;
 using GameNetcodeStuff;
 using HarmonyLib;
 using System;
@@ -47,6 +48,8 @@ namespace CompanyBuildingEnhancements.Configuration {
         {
             if (!IsClient) return;
 
+            CompanyBuildingEnhancementsBase.Logger.LogInfo("Called RequestSync");
+
             using FastBufferWriter stream = new(IntSize, Allocator.Temp);
             MessageManager.SendNamedMessage("CompanyBuildingEnhancements_OnRequestConfigSync", 0uL, stream);
         }
@@ -62,15 +65,13 @@ namespace CompanyBuildingEnhancements.Configuration {
 
             using FastBufferWriter stream = new(value + IntSize, Allocator.Temp);
 
-            try
-            {
+            try {
                 stream.WriteValueSafe(in value, default);
                 stream.WriteBytesSafe(array);
 
                 MessageManager.SendNamedMessage("CompanyBuildingEnhancements_OnReceiveConfigSync", clientId, stream);
             }
-            catch (Exception e)
-            {
+            catch (Exception e) {
                 CompanyBuildingEnhancementsBase.Logger.LogInfo($"Error occurred syncing config with client: {clientId}\n{e}");
             }
         }
@@ -90,12 +91,15 @@ namespace CompanyBuildingEnhancements.Configuration {
                 return;
             }
 
-            byte[] data = new byte[val];
-            reader.ReadBytesSafe(ref data, val);
+            try {
+                byte[] data = new byte[val];
+                reader.ReadBytesSafe(ref data, val);
 
-            SyncInstance(data);
-
-            CompanyBuildingEnhancementsBase.Logger.LogInfo("Successfully synced config with host.");
+                SyncInstance(data);
+                CompanyBuildingEnhancementsBase.Logger.LogInfo("Successfully synced config with host.");
+            } catch (Exception e) {
+                CompanyBuildingEnhancementsBase.Logger.LogError(e);
+            }
         }
         #endregion
 
@@ -104,10 +108,17 @@ namespace CompanyBuildingEnhancements.Configuration {
         [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
         public static void InitializeLocalPlayer()
         {
+            StartMatchLeverPatch.logged = false;
+
             if (IsHost)
-            {
-                MessageManager.RegisterNamedMessageHandler("CompanyBuildingEnhancements_OnRequestConfigSync", OnRequestSync);
-                Synced = true;
+            { 
+                try {
+                    MessageManager.RegisterNamedMessageHandler("CompanyBuildingEnhancements_OnRequestConfigSync", OnRequestSync);
+                    Synced = true;
+                } catch(Exception e) {
+                    CompanyBuildingEnhancementsBase.Logger.LogError(e);
+                }
+                
 
                 return;
             }
