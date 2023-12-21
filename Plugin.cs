@@ -20,12 +20,8 @@ namespace CompanyBuildingEnhancements
 
         private Harmony harmony;
 
-        private static CompanyBuildingEnhancementsBase Instance;
-
         void Awake()
         {
-            if (!Instance) Instance = this;
-
             Logger = base.Logger;
             Config = new(base.Config);
 
