@@ -1,6 +1,4 @@
 ﻿using BepInEx.Configuration;
-using CompanyBuildingEnhancements.Patches;
-using GameNetcodeStuff;
 using HarmonyLib;
 using System;
 using Unity.Collections;
@@ -103,37 +101,11 @@ namespace CompanyBuildingEnhancements.Configuration {
         }
         #endregion
 
-        #region Join/Leave Patches
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(PlayerControllerB), "ConnectClientToPlayerObject")]
-        public static void InitializeLocalPlayer()
-        {
-            StartMatchLeverPatch.logged = false;
-
-            if (IsHost)
-            { 
-                try {
-                    MessageManager.RegisterNamedMessageHandler("CompanyBuildingEnhancements_OnRequestConfigSync", OnRequestSync);
-                    Synced = true;
-                } catch(Exception e) {
-                    CompanyBuildingEnhancementsBase.Logger.LogError(e);
-                }
-                
-
-                return;
-            }
-
-            Synced = false;
-            MessageManager.RegisterNamedMessageHandler("CompanyBuildingEnhancements_OnReceiveConfigSync", OnReceiveSync);
-            RequestSync();
-        }
-
         [HarmonyPostfix]
         [HarmonyPatch(typeof(GameNetworkManager), "StartDisconnect")]
         public static void PlayerLeave()
         {
             RevertSync();
         }
-        #endregion
     }
 }

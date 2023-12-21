@@ -64,10 +64,10 @@ namespace CompanyBuildingEnhancements.Patches {
 
             if (syncedInstantLanding && levelID == 3) {
                 shipHubAnimator.speed = 10f;
-                if (!logged) CompanyBuildingEnhancementsBase.Logger.LogInfo("Instant Landing successfully synced with host config");
+                if (!logged) CompanyBuildingEnhancementsBase.Logger.LogInfo("Instant landing activated. Ship speed set to 10.");
             } else {
                 shipHubAnimator.speed = 1f;
-                if (!logged) CompanyBuildingEnhancementsBase.Logger.LogInfo("Instant Landing did not sync with host config");
+                if (!logged) CompanyBuildingEnhancementsBase.Logger.LogInfo("Instant landing not activated! Ship speed is 1.");
             }
 
             logged = true;
