@@ -29,10 +29,10 @@ namespace CompanyBuildingEnhancements.Configuration {
 
             AUTO_LAND_ON_DEADLINE = NewEntry("bAutoLandOnDeadline", false,
                 "If set to true, the ship will automatically re-route & land at the Company Building when the deadline reaches 0 days.\n" +
-                "This setting will automatically sync with the host's config file to avoid any desync issues.");
+                "This setting will automatically sync with the host's config file to avoid any desync issues."
+            );
 
-            INFINITE_SPRINT_AT_COMPANY = NewEntry("bInfiniteSprintAtCompanyBuilding",
-                true,
+            INFINITE_SPRINT_AT_COMPANY = NewEntry("bInfiniteSprintAtCompanyBuilding", true,
                 "If set to true, you will have infinite stamina/sprint at the Company Building."
             );
         }
