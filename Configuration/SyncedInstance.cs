@@ -1,30 +1,30 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
-using System.Threading.Tasks;
 using Unity.Netcode;
 
-namespace CompanyBuildingEnhancements
-{
+namespace CompanyBuildingEnhancements.Configuration {
     [Serializable]
     public class SyncedInstance<T>
     {
-        public static bool Synced { get; internal set; }
+        internal static CustomMessagingManager MessageManager => NetworkManager.Singleton.CustomMessagingManager;
+        internal static bool IsClient => NetworkManager.Singleton.IsClient;
+        internal static bool IsHost => NetworkManager.Singleton.IsHost;
+
+        [NonSerialized]
+        protected static int IntSize = 4;
 
         public static T Default { get; private set; }
         public static T Instance { get; private set; }
 
-        internal static CustomMessagingManager MessageManager => NetworkManager.Singleton.CustomMessagingManager;
-        internal static bool IsClient => NetworkManager.Singleton.IsClient;
-        internal static bool IsHost => NetworkManager.Singleton.IsHost;
+        public static bool Synced { get; internal set; }
 
         protected void InitInstance(T instance)
         {
             Default = instance;
             Instance = instance;
+
+            IntSize = sizeof(int);
         }
 
         internal static void SyncInstance(byte[] data)
@@ -63,7 +63,7 @@ namespace CompanyBuildingEnhancements
 
             try
             {
-                return (T)bf.Deserialize(stream);
+                return (T) bf.Deserialize(stream);
             }
             catch (Exception e)
             {

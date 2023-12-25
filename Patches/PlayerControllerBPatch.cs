@@ -1,21 +1,42 @@
-﻿using GameNetcodeStuff;
+﻿using CompanyBuildingEnhancements.Configuration;
+using GameNetcodeStuff;
 using HarmonyLib;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CompanyBuildingEnhancements.Patches
 {
-    [HarmonyPatch(typeof(PlayerControllerB), "Update")]
+    [HarmonyPatch(typeof(PlayerControllerB))]
     internal class PlayerControllerBPatch
     {
         [HarmonyPostfix]
-        static void infiniteStaminaAtCompanyPatch(ref float ___sprintMeter)
+        [HarmonyPatch("ConnectClientToPlayerObject")]
+        public static void InitializeLocalPlayer() {
+            if (Config.IsHost) {
+                try {
+                    Config.MessageManager.RegisterNamedMessageHandler("CompanyBuildingEnhancements_OnRequestConfigSync", Config.OnRequestSync);
+                    Config.Synced = true;
+                }
+                catch (Exception e) {
+                    CompanyBuildingEnhancementsBase.Logger.LogError(e);
+                }
+
+                return;
+            }
+
+            Config.Synced = false;
+            Config.MessageManager.RegisterNamedMessageHandler("CompanyBuildingEnhancements_OnReceiveConfigSync", Config.OnReceiveSync);
+            Config.RequestSync();
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch("Update")]
+        static void InfiniteStaminaAtCompanyPatch(ref float ___sprintMeter)
         {
-            var startOfRound = StartOfRound.Instance;
-            if (Config.Default.enableInfiniteSprintAtCompanyConfig == true && startOfRound is not null && startOfRound.currentLevel.levelID == 3)
+            if (!Config.Default.INFINITE_SPRINT_AT_COMPANY)
+                return;
+
+            var curLevel = StartOfRound.Instance?.currentLevel;
+            if (curLevel?.levelID == 3)
             {
                 ___sprintMeter = 1f;
             }

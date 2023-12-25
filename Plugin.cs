@@ -1,12 +1,9 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
+using CompanyBuildingEnhancements.Configuration;
 using CompanyBuildingEnhancements.Patches;
 using HarmonyLib;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CompanyBuildingEnhancements
 {
@@ -21,29 +18,21 @@ namespace CompanyBuildingEnhancements
         public static new Config Config { get; internal set; }
         internal static new ManualLogSource Logger { get; private set; }
 
-        private readonly Harmony harmony = new Harmony(modGUID);
-
-        private static CompanyBuildingEnhancementsBase Instance;
-
-        internal ManualLogSource mls;
+        private Harmony harmony;
 
         void Awake()
         {
-            if (Instance == null)
-            {
-                Instance = this;
-            }
-
-            Config = new(base.Config);
             Logger = base.Logger;
+            Config = new(base.Config);
 
-            mls = BepInEx.Logging.Logger.CreateLogSource(modGUID);
+            try {
+                harmony = new(modGUID);
+                harmony.PatchAll();
 
-            mls.LogInfo(modName + " loaded successfully");
-
-            harmony.PatchAll(typeof(CompanyBuildingEnhancementsBase));
-            harmony.PatchAll(typeof(PlayerControllerBPatch));
-            harmony.PatchAll(typeof(StartMatchLeverPatch));
+                Logger.LogInfo($"{modName} loaded successfully");
+            } catch(Exception e) {
+                Logger.LogError(e);
+            }
         }
     }
 }

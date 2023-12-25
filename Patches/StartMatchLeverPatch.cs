@@ -1,60 +1,77 @@
-﻿using HarmonyLib;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using CompanyBuildingEnhancements.Configuration;
+using HarmonyLib;
 using UnityEngine;
 
-namespace CompanyBuildingEnhancements.Patches
-{
-    [HarmonyPatch(typeof(StartMatchLever), "Update")]
+namespace CompanyBuildingEnhancements.Patches {
+    [HarmonyPatch(typeof(StartMatchLever))]
     internal class StartMatchLeverPatch
     {
         internal static GameObject shipHub;
+        internal static Animator shipHubAnimator;
+
+        internal static bool logged = false;
 
         [HarmonyPrefix]
-        private static void autoLandAtCompanyPatch(ref StartMatchLever __instance)
+        [HarmonyPatch("Update")]
+        private static void AutoLandAtCompany(StartMatchLever __instance)
         {
-            //Synced Config Variables
-            bool syncedInstantLanding = Config.Instance.enableInstantLandingAtCompanyConfig;
-            bool syncedAutoLanding = Config.Instance.enableAutoLandingOnDeadlineConfig;
-            CompanyBuildingEnhancementsBase.Logger.LogInfo(syncedInstantLanding);
-            CompanyBuildingEnhancementsBase.Logger.LogInfo(syncedAutoLanding);
+            #region Synced Config Variables
+            bool syncedInstantLanding = Config.Instance.INSTANT_LAND_AT_COMPANY;
+            bool syncedAutoLanding = Config.Instance.AUTO_LAND_ON_DEADLINE;
 
-            //Auto Landing At Company Building When Deadline Reaches 0 Days
-            bool flag = TimeOfDay.Instance.daysUntilDeadline == 0;
-            if (syncedAutoLanding == true && __instance.playersManager.currentLevel.levelID != 3 && flag && __instance.playersManager.CanChangeLevels())
+            if (!logged) {
+                CompanyBuildingEnhancementsBase.Logger.LogInfo(syncedInstantLanding);
+                CompanyBuildingEnhancementsBase.Logger.LogInfo(syncedAutoLanding);
+            }
+            #endregion
+
+            #region Deadline = 0, Auto Land
+            bool hitDeadline = TimeOfDay.Instance.daysUntilDeadline == 0;
+
+            StartOfRound pManager = __instance.playersManager;
+            int levelID = pManager.currentLevel.levelID;
+
+            if (hitDeadline && syncedAutoLanding && levelID != 3 && pManager.CanChangeLevels())
             {
-                __instance.playersManager.ChangeLevel(3);
+                pManager.ChangeLevel(3);
                 __instance.StartGame();
-                CompanyBuildingEnhancementsBase.Logger.LogInfo("Auto Landing successfully synced with host config");
+
+                if (!logged) {
+                    CompanyBuildingEnhancementsBase.Logger.LogInfo("Auto Landing successfully synced with host config");
+                }
 
             }
+            #endregion
 
-            //Instant Ship Landing At Company Building
-            if ((UnityEngine.Object)(object)shipHub == (UnityEngine.Object)null)
+            #region Instantly Land at Company Building
+            if (!shipHub)
             {
                 shipHub = GameObject.Find("Environment/HangarShip");
-                if ((UnityEngine.Object)(object)shipHub == (UnityEngine.Object)null)
+                shipHubAnimator = shipHub?.GetComponent<Animator>();
+
+                if (!shipHub || !shipHubAnimator)
                 {
+                    if (logged)
+                        return;
+
+                    CompanyBuildingEnhancementsBase.Logger.LogError(
+                        "Ship object or animator not found? Cannot instantly land at company building!"
+                    );
+
                     return;
                 }
             }
-            GameObject obj = shipHub;
-            if ((UnityEngine.Object)(object)((obj != null) ? obj.GetComponent<Animator>() : null) != (UnityEngine.Object)null)
-            {
-                if (syncedInstantLanding == true && __instance.playersManager.currentLevel.levelID == 3)
-                {
-                    shipHub.GetComponent<Animator>().speed = 10f;
-                    CompanyBuildingEnhancementsBase.Logger.LogInfo("Instant Landing successfully synced with host config");
-                }
-                else
-                {
-                    shipHub.GetComponent<Animator>().speed = 1f;
-                    CompanyBuildingEnhancementsBase.Logger.LogInfo("Instant Landing did not sync with host config");
-                }
+
+            if (syncedInstantLanding && levelID == 3) {
+                shipHubAnimator.speed = 10f;
+                if (!logged) CompanyBuildingEnhancementsBase.Logger.LogInfo("Instant landing activated. Ship speed set to 10.");
+            } else {
+                shipHubAnimator.speed = 1f;
+                if (!logged) CompanyBuildingEnhancementsBase.Logger.LogInfo("Instant landing not activated! Ship speed is 1.");
             }
+
+            logged = true;
+            #endregion
         }
     }
 }
