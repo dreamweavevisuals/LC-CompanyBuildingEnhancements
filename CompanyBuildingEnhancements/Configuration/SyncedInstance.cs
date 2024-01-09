@@ -3,7 +3,8 @@ using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using Unity.Netcode;
 
-namespace CompanyBuildingEnhancements.Configuration {
+namespace CompanyBuildingEnhancements.Configuration
+{
     [Serializable]
     public class SyncedInstance<T>
     {
@@ -24,6 +25,8 @@ namespace CompanyBuildingEnhancements.Configuration {
             Default = instance;
             Instance = instance;
 
+            // Makes sure the size of an integer is correct for the current system.
+            // We use 4 by default as that's the size of an int on 32 and 64 bit systems.
             IntSize = sizeof(int);
         }
 
@@ -63,7 +66,7 @@ namespace CompanyBuildingEnhancements.Configuration {
 
             try
             {
-                return (T) bf.Deserialize(stream);
+                return (T)bf.Deserialize(stream);
             }
             catch (Exception e)
             {
