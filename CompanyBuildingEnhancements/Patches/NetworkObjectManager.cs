@@ -13,12 +13,13 @@ namespace CompanyBuildingEnhancements.Patches
         [HarmonyPostfix, HarmonyPatch(typeof(GameNetworkManager), nameof(GameNetworkManager.Start))]
         public static void Init()
         {
-            AssetBundle CBEAssetBundle = AssetBundle.LoadFromFile(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "cbeassets"));
+            //CBEAssetBundle = AssetBundle.LoadFromStream(Assembly.GetExecutingAssembly().GetManifestResourceStream("CompanyBuildingEnhancements.Assets.cbeassets"));
+            CBEAssetBundle = AssetBundle.LoadFromFile(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "cbeassets"));
 
             if (networkPrefab != null)
                 return;
 
-            networkPrefab = (GameObject)CBEAssetBundle.LoadAsset("CBENetworkHandler");
+            networkPrefab = (GameObject)CBEAssetBundle.LoadAsset("Assets/Custom/CBENetworkHandler.prefab");
             networkPrefab.AddComponent<CBENetworkHandler>();
 
             NetworkManager.Singleton.AddNetworkPrefab(networkPrefab);
@@ -35,5 +36,7 @@ namespace CompanyBuildingEnhancements.Patches
         }
 
         static GameObject networkPrefab;
+
+        public static AssetBundle CBEAssetBundle { get; private set; }
     }
 }
