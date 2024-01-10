@@ -12,7 +12,7 @@ namespace CompanyBuildingEnhancements.Networking
 
         internal static GameObject shipHub;
         
-        public void Start()
+        public void Awake()
         {
             Instance = this;
         }
