@@ -1,6 +1,7 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
 using CompanyBuildingEnhancements.Configuration;
+using CompanyBuildingEnhancements.Networking;
 using HarmonyLib;
 using System;
 using System.IO;

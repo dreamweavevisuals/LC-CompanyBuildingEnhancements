@@ -11,7 +11,12 @@ namespace CompanyBuildingEnhancements.Networking
         public static CBENetworkHandler Instance { get; private set; }
 
         internal static GameObject shipHub;
-
+        
+        public void Start()
+        {
+            Instance = this;
+        }
+        
         [ClientRpc]
         public void SellScrapClientRpc()
         {
