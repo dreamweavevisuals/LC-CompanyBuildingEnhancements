@@ -37,11 +37,12 @@ namespace CompanyBuildingEnhancements.Patches
             if (syncedInstantLanding && levelID == 3)
             {
                 shipHubAnimator.speed = 10f;
-                CompanyBuildingEnhancementsBase.Logger.LogInfo("Instant Landing Activated");
+                CompanyBuildingEnhancementsBase.Logger.LogInfo("Instant landing activated");
             }
             else
             {
                 shipHubAnimator.speed = 1f;
+                //CompanyBuildingEnhancementsBase.Logger.LogInfo("Ship operating at normal speed");
             }
 
             logged = true;

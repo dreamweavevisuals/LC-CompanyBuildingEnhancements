@@ -1,4 +1,5 @@
 ﻿using CompanyBuildingEnhancements.Configuration;
+using CompanyBuildingEnhancements.Misc;
 using CompanyBuildingEnhancements.Networking;
 using HarmonyLib;
 using UnityEngine;
@@ -8,37 +9,70 @@ namespace CompanyBuildingEnhancements.Patches
     [HarmonyPatch(typeof(Terminal))]
     internal class TerminalPatch
     {
+        private static bool IsSellScrapFromTerminalEnabled => Config.Instance.EnableSellScrapFromTerminal;
+        #region Terminal Commands
+        private const string SellScrapCommand = "sell scrap";
+        private const string SellCommand = "sell";
+        private const string SellAllCommand = "sell all";
+        private static bool IsCommand(string text, string command) => text.ToLower() == command;
+        private static bool IsSellScrapCommand(string text) => IsCommand(text, SellScrapCommand);
+        private static bool IsSellCommand(string text) => IsCommand(text, SellCommand);
+        private static bool IsSellAllCommand(string text) => IsCommand(text, SellAllCommand);
+        #endregion
+
         [HarmonyPostfix]
         [HarmonyPatch("ParsePlayerSentence")]
         private static void HandleSellScrap(ref Terminal __instance, ref TerminalNode __result)
         {
-            bool syncedSellScrap = Config.Instance.EnableSellScrapFromTerminal;
-            string currSymbol = "\u258C";
             string text = __instance.screenText.text.Substring(__instance.screenText.text.Length - __instance.textAdded);
-            if (!syncedSellScrap)
-            {
+            if (!IsSellScrapFromTerminalEnabled || !IsSellScrapCommand(text))
                 return;
-            }
-            if (!(text.ToLower() == "sell scrap"))
-            {
-                return;
-            }
+
             int quotaRequirement = TimeOfDay.Instance.profitQuota - TimeOfDay.Instance.quotaFulfilled;
+            int companyBuyingRate = Mathf.RoundToInt(StartOfRound.Instance.companyBuyingRate * 100f);
+            string companyBuyingRateResult = "│ Company buying rate: " + companyBuyingRate + "%";
+            var quotaResult = SellScrapResults.CalculateAmountAndProfitSoldQuota();
+            var allResult = SellScrapResults.CalculateAmountAndProfitSoldAll();
+            int amountSoldQuota = quotaResult.AmountSoldQuota;
+            int totalProfitQuota = quotaResult.TotalProfitQuota;
+            int amountSoldAll = allResult.AmountSoldAll;
+            int totalProfitAll = allResult.TotalProfitAll;
+            string scrapOnShipResult = "│ You have " + Mathf.Clamp(amountSoldAll, 0, 999) + " scrap items worth $" + Mathf.Clamp(totalProfitAll, 0, 999999);
+            string thinSpace = "\u2009";
             __result = ScriptableObject.CreateInstance<TerminalNode>();
-            if (StartOfRound.Instance.currentLevel.levelID == 3 && !StartOfRound.Instance.inShipPhase && Misc.AutosellScrapScript.CalculateTotalProfitAll() >= quotaRequirement)
+
+            if (StartOfRound.Instance.currentLevel.levelID == 3 && !StartOfRound.Instance.inShipPhase && totalProfitAll >= quotaRequirement)
             {
                 __result.clearPreviousText = true;
-                __result.displayText = "The Company buying rate is currently " + StartOfRound.Instance.companyBuyingRate.ToString("P0") + "\n" + "\n" + "You currently have " + Misc.AutosellScrapScript.CalculateAmountOfAllScrapSold() + " items worth " + currSymbol + Misc.AutosellScrapScript.CalculateTotalProfitAll() + "!" + "\n" + "\n" + "You can sell " + Misc.AutosellScrapScript.CalculateAmountOfScrapSold() + " items for " + currSymbol + Misc.AutosellScrapScript.CalculateTotalProfit() + " to reach the profit quota." + "\n" + "\n" + "Alternatively, you can choose to sell all of the scrap on your ship." + "\n" + "\n" + ">sell  >sell all" + "\n" + "\n";
+                __result.displayText = "╭────────────────────────────────────────╮\n" +
+                                       companyBuyingRateResult.PadRight(40).Substring(0, 40) + thinSpace + thinSpace + thinSpace + "│\n" +
+                                       "│                                        │\n" +
+                                       scrapOnShipResult.PadRight(40).Substring(0, 40) + thinSpace + thinSpace + "│\n" +
+                                       "╰────────────────────────────────────────╯\n\n" +
+                                       "You can sell " + amountSoldQuota + " scrap items for $" + totalProfitQuota + " to reach the quota.\n\n" + 
+                                       "Alternatively, you can choose to sell all of the scrap on your ship.\n\n" + 
+                                       ">sell  >sell all\n\n";
             }
-            else if (StartOfRound.Instance.currentLevel.levelID == 3 && !StartOfRound.Instance.inShipPhase && Misc.AutosellScrapScript.CalculateTotalProfitAll() < quotaRequirement)
+            else if (StartOfRound.Instance.currentLevel.levelID == 3 && !StartOfRound.Instance.inShipPhase && totalProfitAll < quotaRequirement)
             {
                 __result.clearPreviousText = true;
-                __result.displayText = "The Company buying rate is currently " + StartOfRound.Instance.companyBuyingRate.ToString("P0") + "\n" + "\n" + "You currently have " + Misc.AutosellScrapScript.CalculateAmountOfAllScrapSold() + " items worth " + currSymbol + Misc.AutosellScrapScript.CalculateTotalProfitAll() + "!" + "\n" + "\n" + "You do not have enough scrap to meet the profit quota, but you can sell your scrap anyway if you would like." + "\n" + "\n" + ">sell" + "\n" + "\n";
+                __result.displayText = "╭────────────────────────────────────────╮\n" +
+                                       companyBuyingRateResult.PadRight(40).Substring(0, 40) + thinSpace + thinSpace + thinSpace + "│\n" +
+                                       "│                                        │\n" +
+                                       scrapOnShipResult.PadRight(40).Substring(0, 40) + thinSpace + thinSpace + "│\n" +
+                                       "╰────────────────────────────────────────╯\n\n" +
+                                       "You have not met the quota requirement, but you can sell your scrap anyway if you'd like.\n\n" +
+                                       ">sell\n\n";
             }
             else 
             {
                 __result.clearPreviousText = true;
-                __result.displayText = "The ship needs to be landed at the Company Building to sell scrap items." + "\n" + "\n";
+                __result.displayText = "╭────────────────────────────────────────╮\n" +
+                                       companyBuyingRateResult.PadRight(40).Substring(0, 40) + thinSpace + thinSpace + thinSpace + "│\n" +
+                                       "│                                        │\n" +
+                                       scrapOnShipResult.PadRight(40).Substring(0, 40) + thinSpace + thinSpace + "│\n" +
+                                       "╰────────────────────────────────────────╯\n\n" + 
+                                       "The ship needs to be landed at the Company Building to sell scrap items.\n\n";
             }
             
         }
@@ -47,24 +81,21 @@ namespace CompanyBuildingEnhancements.Patches
         [HarmonyPatch("ParsePlayerSentence")]
         private static void HandleSell(ref Terminal __instance, ref TerminalNode __result)
         {
-            bool syncedSellScrap = Config.Instance.EnableSellScrapFromTerminal;
-            string currSymbol = "\u258C";
             string text = __instance.screenText.text.Substring(__instance.screenText.text.Length - __instance.textAdded);
-            if (!syncedSellScrap)
-            {
+            if (!IsSellScrapFromTerminalEnabled || !IsSellCommand(text))
                 return;
-            }
-            if (!(text.ToLower() == "sell"))
-            {
-                return;
-            }
+
+            var quotaResult = SellScrapResults.CalculateAmountAndProfitSoldQuota();
+            int amountSoldQuota = quotaResult.AmountSoldQuota;
+            int totalProfitQuota = quotaResult.TotalProfitQuota;
             __result = ScriptableObject.CreateInstance<TerminalNode>();
+
             if (StartOfRound.Instance.currentLevel.levelID == 3 && !StartOfRound.Instance.inShipPhase)
             {
                 __result.clearPreviousText = true;
-                __result.displayText = "You sold " + Misc.AutosellScrapScript.CalculateAmountOfScrapSold() + " items for " + currSymbol + Misc.AutosellScrapScript.CalculateTotalProfit() + "!" + "\n" + "\n" + "The Company appreciates your commitment." + "\n" + "\n";
-                //Misc.AutosellScrapScript.SellScrapInShip();
-                CBENetworkHandler.Instance.SellScrapServerRpc();
+                __result.displayText = "You sold " + amountSoldQuota + " scrap items for $" + totalProfitQuota + "!" + "\n" + "\n" + "The Company appreciates your commitment." + "\n" + "\n";
+
+                CBENetworkHandler.instance.SellScrapServerRpc();
             }
             else
             {
@@ -78,23 +109,21 @@ namespace CompanyBuildingEnhancements.Patches
         [HarmonyPatch("ParsePlayerSentence")]
         private static void HandleSellAll(ref Terminal __instance, ref TerminalNode __result)
         {
-            bool syncedSellScrap = Config.Instance.EnableSellScrapFromTerminal;
-            string currSymbol = "\u258C";
             string text = __instance.screenText.text.Substring(__instance.screenText.text.Length - __instance.textAdded);
-            if (!syncedSellScrap)
-            {
+            if (!IsSellScrapFromTerminalEnabled || !IsSellAllCommand(text))
                 return;
-            }
-            if (!(text.ToLower() == "sell all"))
-            {
-                return;
-            }
+
+            var allResult = SellScrapResults.CalculateAmountAndProfitSoldAll();
+            int amountSoldAll = allResult.AmountSoldAll;
+            int totalProfitAll = allResult.TotalProfitAll;
             __result = ScriptableObject.CreateInstance<TerminalNode>();
+
             if (StartOfRound.Instance.currentLevel.levelID == 3 && !StartOfRound.Instance.inShipPhase)
             {
                 __result.clearPreviousText = true;
-                __result.displayText = "You sold " + Misc.AutosellScrapScript.CalculateAmountOfAllScrapSold() + " items for " + currSymbol + Misc.AutosellScrapScript.CalculateTotalProfitAll() + "!" + "\n" + "\n" + "The Company appreciates your commitment." + "\n" + "\n";
-                Misc.AutosellScrapScript.SellAllScrapInShip();
+                __result.displayText = "You sold " + amountSoldAll + " scrap items for $" + totalProfitAll + "!" + "\n" + "\n" + "The Company appreciates your commitment." + "\n" + "\n";
+
+                CBENetworkHandler.instance.SellAllScrapServerRpc();
             }
             else
             {

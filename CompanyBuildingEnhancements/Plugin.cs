@@ -1,10 +1,8 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
 using CompanyBuildingEnhancements.Configuration;
-using CompanyBuildingEnhancements.Networking;
 using HarmonyLib;
 using System;
-using System.IO;
 using System.Reflection;
 using UnityEngine;
 
@@ -22,10 +20,9 @@ namespace CompanyBuildingEnhancements
         private const string Author = "Dreamweave";
         private const string modGUID = Author + ".CompanyBuildingEnhancements";
         private const string modName = "CompanyBuildingEnhancements";
-        private const string modVersion = "2.6.0";
+        private const string modVersion = "2.7.0";
 
         public static new Config Config { get; internal set; }
-        //public static AssetBundle CBEAssetBundle { get; private set; }
         internal static new ManualLogSource Logger { get; private set; }
 
         private Harmony harmony;
@@ -34,9 +31,22 @@ namespace CompanyBuildingEnhancements
             Logger = BepInEx.Logging.Logger.CreateLogSource(modGUID);
             Config = new(base.Config);
 
-            //CBEAssetBundle = AssetBundle.LoadFromStream(Assembly.GetExecutingAssembly().GetManifestResourceStream("CompanyBuildingEnhancements.Assets.cbeassets"));
-            //CBEAssetBundle = AssetBundle.LoadFromFile(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "cbeassets"));
-
+            #region Netcode Patcher
+            var types = Assembly.GetExecutingAssembly().GetTypes();
+            foreach (var type in types)
+            {
+                var methods = type.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+                foreach (var method in methods)
+                {
+                    var attributes = method.GetCustomAttributes(typeof(RuntimeInitializeOnLoadMethodAttribute), false);
+                    if (attributes.Length > 0)
+                    {
+                        method.Invoke(null, null);
+                    }
+                }
+            }
+            #endregion
+            
             try
             {
                 harmony = new(modGUID);
